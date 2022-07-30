@@ -93,7 +93,6 @@ function backToMainMenu() {
     dashEffectR1.clearRect(0, 0, w, h);
     dashEffectR2.clearRect(0, 0, w, h);
     dashEffectR3.clearRect(0, 0, w, h);
-    potatoGroundTextr.clearRect(0, 0, w, h);
 
     document.getElementById("mainMenu").style.visibility = "visible";
     document.getElementById("menuSubText").style.visibility = 
@@ -134,8 +133,6 @@ let dashEffectR0 = dashEffectC0.getContext("2d");
 let dashEffectR1 = dashEffectC1.getContext("2d");
 let dashEffectR2 = dashEffectC2.getContext("2d");
 let dashEffectR3 = dashEffectC3.getContext("2d");
-let potatoGroundTextc = document.getElementById("potatoGroundTextcanvas");
-let potatoGroundTextr = potatoGroundTextc.getContext("2d");
 let w = -1;
 let h = -1;
 let mapLoaded = false;// map.show() has to be called from a setTimeout,
@@ -574,11 +571,6 @@ let potato = {
     mouseThrowy: 0,// the mouse y position when clicked to throw
     throwMovex: 0,// how much to move each frame on x axis during throw
     throwMovey: 0,// how much to move each frame on y axis during throw
-    groundTextWidth: 120,
-    groundTextHeight: 40,
-    groundTextOffsetX: 0,
-    groundTextOffsetY: 0,
-    showGroundText: false,
     loadImage: function() {
         this.img.src = "Assets/Potato.png";
     },
@@ -592,45 +584,6 @@ let potato = {
             this.y - this.yOffset, // y
             this.size, // width 
             this.size); // height
-        
-        // draw text of player who missed throw at potato
-        potatoGroundTextr.clearRect(0, 0, w, h);
-        if(this.showGroundText && !over) {
-            let boxX = this.x - (this.groundTextWidth / 2);
-            let boxY = this.y - this.yOffset - this.groundTextHeight;
-
-            // move textbox if potato is in a border that would hid the textbox
-            let yBorder = 100;
-            if(this.y < yBorder)
-                this.groundTextOffsetY = yBorder;
-            else if(this.y > h - yBorder)
-                this.groundTextOffsetY = 0;
-
-            
-            let xBorder = 30;
-            let xOffset = 170;
-            if(this.x > w - xBorder)
-                this.groundTextOffsetX = -xOffset;
-            else if(this.x < xBorder)
-                this.groundTextOffsetX = xOffset;
-            
-            potatoGroundTextr.globalAlpha = 0.8;
-            potatoGroundTextr.fillStyle = "black";
-            potatoGroundTextr.fillRect(
-                boxX + this.groundTextOffsetX, 
-                boxY + this.groundTextOffsetY, 
-                this.groundTextWidth, 
-                this.groundTextHeight);
-            
-            potatoGroundTextr.fillStyle = playerColors[this.player];
-            potatoGroundTextr.font = "40px VT323";
-
-            potatoGroundTextr.fillText(playerNames[this.player], 
-            boxX + this.groundTextOffsetX + 10, 
-            boxY + this.groundTextOffsetY + this.groundTextHeight - 10);
-
-            potatoGroundTextr.globalAlpha = 1;
-        }
     },
     movement: function() {
         // when attached to a player
@@ -646,9 +599,7 @@ let potato = {
         else if (this.canBeThrown){ 
             if(inCollision(this.x, this.y, 
             players[this.player].x, players[this.player].y)) {
-                this.showGroundText = false;
                 this.attached = true;
-                potatoGroundTextr.clearRect(0, 0, w, h);
             }
         }
 
@@ -658,7 +609,6 @@ let potato = {
             if(this.throwFrame == 0) {
                 this.attached = false;
                 this.canBeThrown = false;
-                this.showGroundText = false;
 
                 this.mouseThrowx = lastMousex;
                 this.mouseThrowy = lastMousey;
@@ -691,17 +641,13 @@ let potato = {
                 if(players[i].id != id) {
                     if(inCollision(this.x, this.y, 
                     players[i].x, players[i].y)) {
-                        potatoGroundTextr.clearRect(0, 0, w, h);
-
                         this.player = i;
-                        this.showGroundText = false;
                         this.attached = true;
                         this.threw = false;
                         this.canBeThrown = true;// for if client
                         // gets potato again they will be able to
                         // throw it
                         recentlyPassed = true;
-                        potatoGroundTextr.clearRect(0, 0, w, h);
                     }
                 }
             }
@@ -711,7 +657,6 @@ let potato = {
                 this.throwFrame = 0;
                 this.threw = false;
                 this.canBeThrown = true;
-                this.showGroundText = true;
             }
         }
 
@@ -974,7 +919,6 @@ socket.on("game started", (init) => {
     dashEffectR1.clearRect(0, 0, w, h);
     dashEffectR2.clearRect(0, 0, w, h);
     dashEffectR3.clearRect(0, 0, w, h);
-    potatoGroundTextr.clearRect(0, 0, w, h);
 
     // set up all the game data
 
@@ -993,8 +937,6 @@ socket.on("game started", (init) => {
     dashEffectC1.height = h;
     dashEffectC2.height = h;
     dashEffectC3.height = h;
-    potatoGroundTextc.width = w;
-    potatoGroundTextc.height = h;
 
     map.size = init.map.size; 
     map.mapData = init.map.data;
@@ -1373,7 +1315,6 @@ function loop() {
             player: potato.player,
             x: potato.x,
             y: potato.y,
-            showGroundText: potato.showGroundText
         }
 
         socket.emit("send client data", clientData, lobby, 
@@ -1413,13 +1354,11 @@ function gameOver() {
 
     removeListeners();
 
-    // if potato is on the ground remove potato ground text and move
+    // if potato is on the ground move
     // potato back to player who threw it before exploding
     r.clearRect(0, 0, w, h);
     players[clientId].show();
     showOtherPlayers();
-
-    potatoGroundTextr.clearRect(0, 0, w, h);
 
     potato.x = players[potato.player].x + 
     ((players[potato.player].lastx == -1) ? -25 : 25);
@@ -1444,13 +1383,19 @@ socket.on("cancel game", () => {
 
     document.getElementById("gameOverText").style.visibility = "hidden";
 
+    window.alert(
+        "Someone you were playing with with " + 
+        "left your game, so the game ended.");
+
     backToMainMenu();
 
+    /*
     window.setTimeout(() => {
         window.alert(
             "Someone you were playing with with " + 
             "left your game, so the game ended.");
     }, 20);
+    */
 });
 
 // client is receiving data from the server 
@@ -1463,7 +1408,6 @@ socket.on("send server data", (playersData, potatoData, frame) => {
         potato.x = potatoData.x;
         potato.y = potatoData.y;
         potato.dir = potatoData.dir;
-        potato.showGroundText = potatoData.showGroundText;
     }
     // I have no idea why this works, or if it even really works
     // but it seems to be working, so LET'S GO!
@@ -1582,8 +1526,6 @@ function showOtherPlayers() {
 
 // when the potato is with player other than client
 function showOtherPotato() {
-    potatoGroundTextr.clearRect(0, 0, w, h);
-
     r.drawImage(potato.img, // img
         (players[potato.player].dir == 1) ? 0 : potato.size, // clip x start
         0, // clip y start
@@ -1593,43 +1535,4 @@ function showOtherPotato() {
         potato.y - potato.yOffset, // y
         potato.size, // width 
         potato.size); // height
-    
-    if(potato.showGroundText && !over) {
-        let boxX = potato.x - (potato.groundTextWidth / 2);
-        let boxY = potato.y - potato.yOffset - potato.groundTextHeight;
-
-        // move textbox if potato is in a border that would hid the textbox
-        let yBorder = 100;
-        if(potato.y < yBorder)
-            potato.groundTextOffsetY = yBorder;
-        else if(potato.y > h - yBorder)
-            potato.groundTextOffsetY = 0;
-
-        
-        let xBorder = 30;
-        let xOffset = 170;
-        if(potato.x > w - xBorder)
-            potato.groundTextOffsetX = -xOffset;
-        else if(potato.x < xBorder)
-            potato.groundTextOffsetX = xOffset;
-        
-        potatoGroundTextr.globalAlpha = 0.8;
-        potatoGroundTextr.fillStyle = "black";
-        potatoGroundTextr.fillRect(
-            boxX + potato.groundTextOffsetX, 
-            boxY + potato.groundTextOffsetY, 
-            potato.groundTextWidth, 
-            potato.groundTextHeight);
-        
-        potatoGroundTextr.fillStyle = playerColors[potato.player];
-        potatoGroundTextr.font = "40px VT323";
-
-        potatoGroundTextr.fillText(playerNames[potato.player], 
-        boxX + potato.groundTextOffsetX + 10, 
-        boxY + potato.groundTextOffsetY + potato.groundTextHeight - 10);
-
-        potatoGroundTextr.globalAlpha = 1;
-    }
-    else
-        potatoGroundTextr.clearRect(0, 0, w, h);
 }

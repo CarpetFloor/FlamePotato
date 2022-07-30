@@ -210,14 +210,12 @@ io.on('connection', (socket) => {
       x: 0,
       y: 0,
       lastx: 0,
-      showGroundText: false
     }
     if(potatoData != "nothing") {
       newPotatoData.player = potatoData.player;
       newPotatoData.x = potatoData.x;
       newPotatoData.y = potatoData.y;
       newPotatoData.lastx = potatoData.lastx;
-      newPotatoData.showGroundText = potatoData.showGroundText;
     }
 
     for(let i = 0; i < lobbies[lobby].length; i++) {
