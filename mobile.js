@@ -35,7 +35,7 @@ $(document).ready(function() {
             });
         })
 
-        orientationTest();
+        setMobileView();
     }
     else {
         let mobileHeight = Math.floor(window.innerHeight - 70);
@@ -52,6 +52,8 @@ $(document).ready(function() {
     }
 });
 
+/*
+doesn't work on ios devices, so I guess disable it
 function orientationTest() {
     if(screen.height > screen.width) {
         window.alert("Please use landscape mode! I didn't want to try to make"
@@ -63,6 +65,7 @@ function orientationTest() {
     else
         setMobileView();
 }
+*/
 
 // actually make everything look good on mobile
 function setMobileView() {
