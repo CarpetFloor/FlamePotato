@@ -1,16 +1,6 @@
--Make sure that IP address is not visible on website
--Remove window.alerts
+-Fix game cancelled window.alert not showing up
 -Fix potato and/ or text box flickering bug
 -Lag
--infinite potato range
-
+-Maybe add infinite potato range
 -Make sure bug window.alert is not commented out
 -Make sure game lasts 60 seconds
-
-git add ~/Desktop/Other/Games/'Flame Potato'/*
-git commit -m "trying to get this to work"
-
-git remote rm origin
-git remote add origin git@github.com:CarpetFloor/FlamePotato.git
-git branch -M main
-git push origin HEAD:master
