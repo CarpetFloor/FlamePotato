@@ -1,3 +1,5 @@
+-When making changes, set DNS to 300, and 86400 afterwards
+
 -Fix game cancelled window.alert not showing up
 -Fix potato and/ or text box flickering bug
 -Lag:
