@@ -1,10 +1,5 @@
--When making changes, set domain DNS to 300, and 86400 afterwards
-
--Fix game cancelled window.alert not showing up
--Fix potato and/ or text box flickering bug:
-	>Remove potato text box
--Lag:
-	>Possibly fix by having clients only render the game, and everything they do is sent to the server
+-Lag
+-Fix potato flickering bug:
 -Maybe add infinite potato range
 -Make sure bug window.alert is not commented out
 -Make sure game lasts 60 seconds

@@ -1276,7 +1276,6 @@ function mobileDash() {
 // the main loop for the game
 function loop() {
     if(mapLoaded && !over) {
-
         r.clearRect(0, 0, w, h);
 
         // only show potato on top of players when a player is holding potato
@@ -1407,12 +1406,11 @@ socket.on("send server data", (playersData, potatoData, frame) => {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
         potato.y = potatoData.y;
-        potato.dir = potatoData.dir;
+        // potato.dir = potatoData.dir;
     }
     // I have no idea why this works, or if it even really works
     // but it seems to be working, so LET'S GO!
     if(players[clientId].hasSentData) {
-        window.setTimeout(loop, timeUntilNextFrame);
         players[clientId].hasSentData = false;
 
         for(let i = 0; i < playersData.length; i++) {
@@ -1436,6 +1434,8 @@ socket.on("send server data", (playersData, potatoData, frame) => {
         
         if(potatoFrame >= maxPotatoFrame)
             gameOver();
+        else
+            window.setTimeout(loop, timeUntilNextFrame);
     }
 });
 
@@ -1527,7 +1527,8 @@ function showOtherPlayers() {
 // when the potato is with player other than client
 function showOtherPotato() {
     r.drawImage(potato.img, // img
-        (players[potato.player].dir == 1) ? 0 : potato.size, // clip x start
+        //(players[potato.player].dir == 1) ? 0 : potato.size, // clip x start
+        0, // clip x start
         0, // clip y start
         potato.size, // clip x end
         potato.size, // clip y end

@@ -211,11 +211,12 @@ io.on('connection', (socket) => {
       y: 0,
       lastx: 0,
     }
+
     if(potatoData != "nothing") {
       newPotatoData.player = potatoData.player;
       newPotatoData.x = potatoData.x;
       newPotatoData.y = potatoData.y;
-      newPotatoData.lastx = potatoData.lastx;
+      // newPotatoData.lastx = potatoData.lastx;
     }
 
     for(let i = 0; i < lobbies[lobby].length; i++) {
@@ -302,7 +303,7 @@ function touching(fromX, fromY, toX, toY) {
       Math.pow(Math.abs(toX - fromX), 2)
       +
       Math.pow(Math.abs(toY - fromY), 2)
-  ) < 300);
+  ) < 100);
 }
 
 // contains all data for each client to set up the game
