@@ -41,7 +41,7 @@ let dataSentCount = [-1];
 let lobbyFrames = [-1];
 let maxPlayersPerLobby = 4;
 let startWait = 1500;
-let fps = 30;
+let fps = 60;
 
 io.on('connection', (socket) => {
   console.log(socket.id + " connected");
