@@ -30,13 +30,15 @@ function User(id) {
   this.y = -1;
   this.lastx = 0;
   this.animationFrame = -1;
-  this.dashPressed = false;
-  this.hasSentData = false;
+  // this.dashPressed = false;
+  // this.hasSentData = false;
 }
 
 let users = [];
 let lobbies = [[]];
 let lobbiesInGame = [];// which lobbies are in the game
+let dataSentCount = [-1];
+let lobbyFrames = [-1];
 let maxPlayersPerLobby = 4;
 let startWait = 1500;
 let fps = 30;
@@ -65,8 +67,9 @@ io.on('connection', (socket) => {
       removeFromLobby(id);
     else {
       for(let i = 0; i <= lobbies[lobbyRemovePos].length - 1; i++) {
-        if(lobbies[lobbyRemovePos][i].id == id)
+        if(lobbies[lobbyRemovePos][i].id == id) {
           lobbies[lobbyRemovePos].splice(i, 1);
+        }
       }
     }
 
@@ -79,6 +82,8 @@ io.on('connection', (socket) => {
       for(let i = 0; i < lobbiesInGame.length; i++) {
         if(lobbiesInGame[i] == lobbyRemovePos) {
           lobbiesInGame.splice(i, 1);
+          dataSentCount.splice(i, 1);
+          lobbyFrames.splice(i, 1);
           break;
         }
       }
@@ -110,8 +115,9 @@ io.on('connection', (socket) => {
       }
     }
     // there is only main lobby, so just create a new lobby
-    else
+    else {
       lobbies.push([]);
+    }
     // set player lobby to the id of the newly created lobby
     users[getUserPos(id)].lobby = (lobby).toString();
     // add player to newly created lobby
@@ -169,6 +175,8 @@ io.on('connection', (socket) => {
 
           if(lobbiesInGame[i] == lobby) {
             lobbiesInGame.splice(i, 1);
+            dataSentCount.splice(i, 1);
+            lobbyFrames.splice(i, 1);
             break;
           }
 
@@ -196,6 +204,8 @@ io.on('connection', (socket) => {
     // is already checked when trying to join lobby
     if(lobbies[lobby].length > 1 && !(lobbiesInGame.includes(lobby))) {
       lobbiesInGame.push(lobby);
+      dataSentCount.push(0);
+      lobbyFrames.push(0);
       io.to(lobby.toString()).emit("game started", gameStartData(lobby));
     }
   });
@@ -204,13 +214,16 @@ io.on('connection', (socket) => {
     io.to(lobby.toString()).emit("game started", gameStartData(lobby));
   })
 
+  // server is receiving data from a client
   socket.on("send client data", (client, lobby, potatoData, frame) => {
+    ++dataSentCount[lobby];
+
     let newPotatoData = {
       player: -1,
       x: 0,
       y: 0,
       lastx: 0,
-    }
+    };
 
     if(potatoData != "nothing") {
       newPotatoData.player = potatoData.player;
@@ -229,8 +242,13 @@ io.on('connection', (socket) => {
       }
     }
 
-    io.to(lobby.toString()).emit("send server data", lobbies[lobby], 
-    (potatoData != "nothing") ? newPotatoData : "nothing", frame);
+    if(dataSentCount[lobby] >= lobbies[lobby].length) {
+      dataSentCount[lobby] = 0;
+      ++lobbyFrames[lobby];
+
+      io.to(lobby.toString()).emit("send server data", lobbies[lobby], 
+      (potatoData != "nothing") ? newPotatoData : "nothing", lobbyFrames[lobby]);
+    }
   })
 });
 

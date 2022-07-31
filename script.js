@@ -104,12 +104,6 @@ function backToMainMenu() {
 
     socket.emit("go back to main lobby", id, lobby);
     lobby = 0;
-
-    /* there is a bug that if the game ends with the potato on the ground, and then if 
-    the player who threw that potato gets the potato to start with next round, the 
-    potato will still be on the ground and the player has to grab it. So, this seems 
-    to work as a quick fix*/
-    window.reload();
 }
 
 function tryToStartGame() {
@@ -233,7 +227,6 @@ function Player(id) {
     this.maxDashWaitFrame = fps * 5,
     // right, bottom-right, bottom, bottom-left, left, top-left, top, top-right
     this.lastDir = 0,
-    this.hasSentData = false,
     this.setUp = function() {
         this.img.src = "Assets/Players.png";
         this.dashWaitFrame = this.maxDashWaitFrame;
@@ -1297,8 +1290,6 @@ function loop() {
         players[clientId].processInput();
         potato.movement();
 
-        players[clientId].hasSentData = true;
-
         // only send client data that is actually needed by server
         let clientData = {
             id: players[clientId].id,
@@ -1397,46 +1388,41 @@ socket.on("cancel game", () => {
     */
 });
 
-// client is receiving data from the server 
+// client is receiving data from the server
+let date = new Date();
+let time = date.getTime();
+let oldTime = time;
 socket.on("send server data", (playersData, potatoData, frame) => {
-    /*I have no idea how the position and rendering
-    of the potato for all clients actually works properly;
-    I did a bunch of random trial and error. But it works, so...*/
+    date = new Date();
+    time = date.getTime();
+    console.log(time - oldTime, 1000 / fps, timeUntilNextFrame);
+    console.log(playersData);
+    console.log(potatoData);
+    oldTime = time;
+
     if(potatoData != "nothing") {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
         potato.y = potatoData.y;
-        // potato.dir = potatoData.dir;
     }
-    // I have no idea why this works, or if it even really works
-    // but it seems to be working, so LET'S GO!
-    if(players[clientId].hasSentData) {
-        players[clientId].hasSentData = false;
 
-        for(let i = 0; i < playersData.length; i++) {
-            // set data of other players
-            // don't need to update client
-            if(playersData[i].id != id) {
-                players[i].x = playersData[i].x;
-                players[i].y = playersData[i].y;
-                players[i].lastx = playersData[i].lastx;
-                players[i].animationFrame = playersData[i].animationFrame;
-                // players[i].dashPressed = playersData[i].dashPressed;
-
-                // drawing other player here causes flickering
-            }
+    for(let i = 0; i < playersData.length; i++) {
+        // set data of other players
+        // don't need to update client
+        if(playersData[i].id != id) {
+            players[i].x = playersData[i].x;
+            players[i].y = playersData[i].y;
+            players[i].lastx = playersData[i].lastx;
+            players[i].animationFrame = playersData[i].animationFrame;
         }
-
-        ++potatoFrame;
-        // make sure game frame is in synce with each other client
-        if(potatoFrame < frame)
-            potatoFrame = frame;
-        
-        if(potatoFrame >= maxPotatoFrame)
-            gameOver();
-        else
-            window.setTimeout(loop, timeUntilNextFrame);
     }
+
+    potatoFrame = frame;
+    
+    if(potatoFrame >= maxPotatoFrame)
+        gameOver();
+    else
+        window.setTimeout(loop, timeUntilNextFrame);
 });
 
 function showOtherPlayers() {
