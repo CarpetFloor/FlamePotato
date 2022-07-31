@@ -689,7 +689,6 @@ let ui = {
         y: -1
     },
     showDash: function() {
-        console.log("hi");
         this.frame = 16;
 
         //border
@@ -898,6 +897,7 @@ function inCollision(fromX, fromY, toX, toY) {
 
 // NOTE: use size if width and height are the same, otherwise use width and height
 socket.on("game started", (init) => {
+    console.log(init);
     document.getElementById("gameOverText").style.visibility = "hidden";
     document.getElementById("lobby").style.visibility = "hidden";
     document.getElementById("menuSubText").style.visibility = "hidden";
@@ -944,7 +944,6 @@ socket.on("game started", (init) => {
     fps = init.fps;
     timeUntilNextFrame = 1000 / fps;
     maxPotatoFrame = fps * 60;
-    console.log(init);
     potatoFrame = 0;
     startWait = init.startWait;
 
@@ -1289,47 +1288,43 @@ function extrapolate() {
         if(players[i].id != id) {
             // console.log(players[i].x, players[i].y, players[i].dirx, players[i].diry);
             
-            // lol forgot to normalize for way too long
-            // diagonal
-            if(players[i].dirx != 0 && players[i].diry != 0) {
-                players[i].x += players[i].dirx * 
-                (speed / (Math.sqrt(Math.pow(speed, 2) + 
-                Math.pow(speed, 2)))) * speed;
-
-                players[i].y += players[i].diry * 
-                (speed / (Math.sqrt(Math.pow(speed, 2) + 
-                Math.pow(speed, 2)))) * speed;
+            // do extrapolation differently for mobile and non-mobile devices
+            // mobile
+            /* for mobile, continue going in the last inputed direction*/
+            if(players[i].dirx != 0 && players[i].dirx != 1 && players[i].dirx != -1) {
+                players[i].x += players[i].dirx;
+                players[i].y += players[i].diry;
             }
-            // not diagonal
+            // not mobile
             else {
-                players[i].x += players[i].dirx * speed;
-                players[i].y += players[i].diry * speed;
+                // lol forgot to normalize for way too long
+                // diagonal
+                if(players[i].dirx != 0 && players[i].diry != 0) {
+                    players[i].x += players[i].dirx * 
+                    (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                    Math.pow(speed, 2)))) * speed;
+
+                    players[i].y += players[i].diry * 
+                    (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                    Math.pow(speed, 2)))) * speed;
+                }
+                // not diagonal
+                else {
+                    players[i].x += players[i].dirx * speed;
+                    players[i].y += players[i].diry * speed;
+                }
             }
         }
-    }
-
-    // only send client data that is actually needed by server
-    let clientData = {
-        id: players[clientId].id,
-        x: players[clientId].x,
-        y: players[clientId].y,
-        lastx: players[clientId].lastx,
-        dirx: players[clientId].dirx,
-        diry: players[clientId].diry,
-        animationFrame: players[clientId].animationFrame,
-        // dashPressed: players[clientId].dashPressed,
-    }
-
-    // only send potato data that is actually needed by server
-    let potatoData = {
-        player: potato.player,
-        x: potato.x,
-        y: potato.y,
     }
 }
 
 function renderStuff() {
     r.clearRect(0, 0, w, h);
+
+    // bar at the top that shows how much longer the game will last for,
+    // on second thought, this might not be the best name
+    ui.showPotato();
+    ui.showDash();
     
     // render other clients first so client is on top :)
     showOtherPlayers();
@@ -1342,11 +1337,6 @@ function renderStuff() {
         potato.show();
     else
         showOtherPotato();
-    
-    // bar at the top that shows how much longer the game will last for,
-    // on second thought, this might not be the best name
-    ui.showPotato();
-    ui.showDash();
 }
 
 // the main loop for the game
@@ -1363,8 +1353,8 @@ function loop() {
             x: players[clientId].x,
             y: players[clientId].y,
             lastx: players[clientId].lastx,
-            dirx: players[clientId].dirx,
-            diry: players[clientId].diry,
+            dirx: (mobile) ? joystickData.movex : players[clientId].dirx,
+            diry: (mobile) ? joystickData.movey : players[clientId].diry,
             animationFrame: players[clientId].animationFrame,
             // dashPressed: players[clientId].dashPressed,
         }
