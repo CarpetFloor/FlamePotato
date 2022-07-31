@@ -137,7 +137,7 @@ let fps = -1;
 let timeUntilNextFrame = -1;
 let potatoFrame = 0;// current frame of the main game loop
 let maxPotatoFrame = -1;// last frame of the main game loop
-let showHitboxes = true;// for debugging
+let showHitboxes = false;// for debugging
 let players = [];// objects of all players in the game
 let clientId = -1;// index of object in players array that c1ient is
 let lastMousex = 0;
@@ -263,7 +263,7 @@ function Player(id) {
 
         // player hitbox
         if(showHitboxes) {
-            let hitboxSize = 100;
+            let hitboxSize = 70;
 
             r.fillStyle = "green";
             r.fillRect(this.x - (hitboxSize / 2), this.y - (hitboxSize / 2),
@@ -889,12 +889,12 @@ let explosion = {
 }; explosion.loadImage();
 
 function inCollision(fromX, fromY, toX, toY) {
-        return (Math.sqrt(
-            Math.pow(Math.abs(toX - fromX), 2)
-            +
-            Math.pow(Math.abs(toY - fromY), 2)
-        ) < 100);//50 default
-    }
+    return (Math.sqrt(
+        Math.pow(Math.abs(toX - fromX), 2)
+        +
+        Math.pow(Math.abs(toY - fromY), 2)
+    ) < 70);
+}
 
 // NOTE: use size if width and height are the same, otherwise use width and height
 socket.on("game started", (init) => {
@@ -1289,8 +1289,22 @@ function extrapolate() {
         if(players[i].id != id) {
             // console.log(players[i].x, players[i].y, players[i].dirx, players[i].diry);
             
-            players[i].x += players[i].dirx * speed;
-            players[i].y += players[i].diry * speed;
+            // lol forgot to normalize for way too long
+            // diagonal
+            if(players[i].dirx != 0 && players[i].diry != 0) {
+                players[i].x += players[i].dirx * 
+                (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                Math.pow(speed, 2)))) * speed;
+
+                players[i].y += players[i].diry * 
+                (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                Math.pow(speed, 2)))) * speed;
+            }
+            // not diagonal
+            else {
+                players[i].x += players[i].dirx * speed;
+                players[i].y += players[i].diry * speed;
+            }
         }
     }
 
