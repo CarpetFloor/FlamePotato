@@ -137,7 +137,7 @@ let fps = -1;
 let timeUntilNextFrame = -1;
 let potatoFrame = 0;// current frame of the main game loop
 let maxPotatoFrame = -1;// last frame of the main game loop
-let showHitboxes = false;// for debugging
+let showHitboxes = true;// for debugging
 let players = [];// objects of all players in the game
 let clientId = -1;// index of object in players array that c1ient is
 let lastMousex = 0;
@@ -149,6 +149,7 @@ let profanity = false;
 let playerColors = ["yellow", "lime", "cornflowerBlue", "red"];
 let playerNames = ["yellow", "green", "blue", "red"];
 let gameStarted = false;
+let extrapolateInterval;
 
 let map = {
     img: new Image(),
@@ -217,12 +218,12 @@ function Player(id) {
     this.dashDiry = 0,
     this.canMovex = true,
     this.canMoveY = true,
-    this.speed = 17,
+    this.speed = 10,
     this.dashPressed = false,
     this.canDash = true,
-    this.dashMultiplier = 4,
+    this.dashMultiplier = 5,
     this.dashFrame = 0,
-    this.maxDashFrame = 8,
+    this.maxDashFrame = 11,
     this.dashWaitFrame = 0,
     this.maxDashWaitFrame = fps * 5,
     // right, bottom-right, bottom, bottom-left, left, top-left, top, top-right
@@ -262,10 +263,12 @@ function Player(id) {
 
         // player hitbox
         if(showHitboxes) {
+            let hitboxSize = 100;
+
             r.fillStyle = "green";
-            r.fillRect(this.x - (this.width / 2), this.y - (this.height / 2),
-            this.width,
-            this.height);
+            r.fillRect(this.x - (hitboxSize / 2), this.y - (hitboxSize / 2),
+            hitboxSize,
+            hitboxSize);
         }
 
         // client "you" textbox
@@ -558,8 +561,8 @@ let potato = {
     canBeThrown: true,
     throwx: 1,
     throwFrame: 0,
-    maxThrowFrame: 7,
-    throwSpeed: 80,
+    maxThrowFrame: 10,
+    throwSpeed: 70,
     mouseThrowx: 0,// the mouse x position when clicked to throw
     mouseThrowy: 0,// the mouse y position when clicked to throw
     throwMovex: 0,// how much to move each frame on x axis during throw
@@ -686,6 +689,7 @@ let ui = {
         y: -1
     },
     showDash: function() {
+        console.log("hi");
         this.frame = 16;
 
         //border
@@ -1204,6 +1208,8 @@ function startGame() {
         document.getElementById("joystickContainer").style.visibility = "visible";
     }
 
+    extrapolateInterval = window.setInterval(extrapolate, timeUntilNextFrame);
+
     loop();
 }
 
@@ -1214,6 +1220,7 @@ let joystickConfig = {
     "externalStrokeColor": "#212F3D",
     "externalLineWidth": 5
 };
+// syntax is correct here
 let joystick = new JoyStick("joystickContainer", joystickConfig);
 
 let joystickData = {
@@ -1266,26 +1273,72 @@ function mobileDash() {
     }
 }
 
+// i have no idea how to fix lag, pls work
+/* but the idea here is to guess what would be happening in the frames 
+that should be a thing but aren't because of lag. Make guess by moving
+client if they were pressing a button*/
+function extrapolate() {
+    renderStuff();
+
+    players[clientId].processInput();
+    potato.movement();
+
+    let speed = players[0].speed;
+
+    for(let i = 0; i < players.length; i++) {
+        if(players[i].id != id) {
+            // console.log(players[i].x, players[i].y, players[i].dirx, players[i].diry);
+            
+            players[i].x += players[i].dirx * speed;
+            players[i].y += players[i].diry * speed;
+        }
+    }
+
+    // only send client data that is actually needed by server
+    let clientData = {
+        id: players[clientId].id,
+        x: players[clientId].x,
+        y: players[clientId].y,
+        lastx: players[clientId].lastx,
+        dirx: players[clientId].dirx,
+        diry: players[clientId].diry,
+        animationFrame: players[clientId].animationFrame,
+        // dashPressed: players[clientId].dashPressed,
+    }
+
+    // only send potato data that is actually needed by server
+    let potatoData = {
+        player: potato.player,
+        x: potato.x,
+        y: potato.y,
+    }
+}
+
+function renderStuff() {
+    r.clearRect(0, 0, w, h);
+    
+    // render other clients first so client is on top :)
+    showOtherPlayers();
+
+    // render client last so that they are on top of other clients
+    players[clientId].show();
+
+    // i gave up on trying to layer the potato so put it all here
+    if(potato.player == clientId)
+        potato.show();
+    else
+        showOtherPotato();
+    
+    // bar at the top that shows how much longer the game will last for,
+    // on second thought, this might not be the best name
+    ui.showPotato();
+    ui.showDash();
+}
+
 // the main loop for the game
 function loop() {
     if(mapLoaded && !over) {
-        r.clearRect(0, 0, w, h);
-
-        // only show potato on top of players when a player is holding potato
-        if(potato.player != clientId)
-            showOtherPotato();
-        
-        // render other clients first so client is on top :)
-        showOtherPlayers();
-
-        // render client last so that they are on top of other clients
-        players[clientId].show();
-
-        if(potato.player == clientId)
-            potato.show();
-
-        ui.showDash();
-        ui.showPotato();
+        renderStuff();
 
         players[clientId].processInput();
         potato.movement();
@@ -1296,6 +1349,8 @@ function loop() {
             x: players[clientId].x,
             y: players[clientId].y,
             lastx: players[clientId].lastx,
+            dirx: players[clientId].dirx,
+            diry: players[clientId].diry,
             animationFrame: players[clientId].animationFrame,
             // dashPressed: players[clientId].dashPressed,
         }
@@ -1315,9 +1370,11 @@ function loop() {
         if(recentlyPassed)
             recentlyPassed = false;
     }
-};// mainLoop = window.setInterval(loop, 1000 / fps);
+};
 
 function removeListeners() {
+    window.clearInterval(extrapolateInterval);
+
     if(!mobile) {
         document.removeEventListener("keydown", press);
         document.removeEventListener("keyup", release);
@@ -1389,17 +1446,7 @@ socket.on("cancel game", () => {
 });
 
 // client is receiving data from the server
-let date = new Date();
-let time = date.getTime();
-let oldTime = time;
 socket.on("send server data", (playersData, potatoData, frame) => {
-    date = new Date();
-    time = date.getTime();
-    console.log(time - oldTime, 1000 / fps, timeUntilNextFrame);
-    console.log(playersData);
-    console.log(potatoData);
-    oldTime = time;
-
     if(potatoData != "nothing") {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
@@ -1413,6 +1460,8 @@ socket.on("send server data", (playersData, potatoData, frame) => {
             players[i].x = playersData[i].x;
             players[i].y = playersData[i].y;
             players[i].lastx = playersData[i].lastx;
+            players[i].dirx = playersData[i].dirx;
+            players[i].diry = playersData[i].diry;
             players[i].animationFrame = playersData[i].animationFrame;
         }
     }
@@ -1453,59 +1502,6 @@ function showOtherPlayers() {
                     players[i].width,// width of image
                     players[i].height// height of image
                 );
-
-            // can't get the dash to work
-            // dash
-            // if(players[i].dashPressed)
-            /*
-            if(players[i].dashPressed) {
-                console.log(players[i].x, players[i].y);
-                // with more players dash stuff here
-                // last here, test to see if path is drawn correctly
-                switch(i) {
-                    case 0:
-                        dashEffectR0.beginPath();
-                        dashEffectR0.moveTo(players[i].x, players[i].y);
-                        dashEffectR0.lineTo(players[i].x, players[i].y);
-                        dashEffectR0.stroke();
-                        break;
-                    case 1:
-                        dashEffectR1.beginPath();
-                        dashEffectR1.moveTo(players[i].x, players[i].y);
-                        dashEffectR1.lineTo(players[i].x, players[i].y);
-                        dashEffectR1.stroke();
-                        break;
-                    case 2:
-                        dashEffectR2.beginPath();
-                        dashEffectR2.moveTo(players[i].x, players[i].y);
-                        dashEffectR2.lineTo(players[i].x, players[i].y);
-                        dashEffectR2.stroke();
-                        break;
-                    case 3:
-                        dashEffectR3.beginPath();
-                        dashEffectR3.moveTo(players[i].x, players[i].y);
-                        dashEffectR3.lineTo(players[i].x, players[i].y);
-                        dashEffectR3.stroke();
-                        break;
-                }
-            }
-            /*else {
-                // with more players dash stuff here
-                switch(i) {
-                    case 0:
-                        dashEffectR0.clearRect(0, 0, w, h);
-                        break;
-                    case 1:
-                        dashEffectR1.clearRect(0, 0, w, h);
-                        break;
-                    case 2:
-                        dashEffectR2.clearRect(0, 0, w, h);
-                        break;
-                    case 3:
-                        dashEffectR3.clearRect(0, 0, w, h);
-                        break;
-                }
-            }*/
         }
     }
 }

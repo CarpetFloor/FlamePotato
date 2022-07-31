@@ -52,21 +52,6 @@ $(document).ready(function() {
     }
 });
 
-/*
-doesn't work on ios devices, so I guess disable it
-function orientationTest() {
-    if(screen.height > screen.width) {
-        window.alert("Please use landscape mode! I didn't want to try to make"
-        + " this work in portait mode");
-
-        // allow enough time for orientation to change and be detected  
-        window.setTimeout(location.reload(), 50);
-    }
-    else
-        setMobileView();
-}
-*/
-
 // actually make everything look good on mobile
 function setMobileView() {
     // menu stuff
@@ -210,7 +195,9 @@ function setMobileView() {
     });
 
     $("#playerName").css({
-        "margin-top":"3px"
+        "margin-top":"3px",
+        "width":"90%",
+        "font-size":"25px"
     });
 
     // mobile controls

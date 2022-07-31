@@ -29,6 +29,8 @@ function User(id) {
   this.x = -1;
   this.y = -1;
   this.lastx = 0;
+  this.dirx = 0;
+  this.diry = 0;
   this.animationFrame = -1;
   // this.dashPressed = false;
   // this.hasSentData = false;
@@ -41,7 +43,7 @@ let dataSentCount = [-1];
 let lobbyFrames = [-1];
 let maxPlayersPerLobby = 4;
 let startWait = 1500;
-let fps = 60;
+let fps = 30;
 
 io.on('connection', (socket) => {
   console.log(socket.id + " connected");
@@ -237,6 +239,8 @@ io.on('connection', (socket) => {
         lobbies[lobby][i].x = client.x;
         lobbies[lobby][i].y = client.y;
         lobbies[lobby][i].lastx = client.lastx;
+        lobbies[lobby][i].dirx = client.dirx;
+        lobbies[lobby][i].diry = client.diry;
         lobbies[lobby][i].animationFrame = client.animationFrame;
         // lobbies[lobby][i].dashPressed = client.dashPressed;
       }

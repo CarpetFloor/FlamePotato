@@ -1,5 +1,7 @@
--Lag
--Fix potato flickering bug:
--Maybe add infinite potato range
--Make sure bug window.alert is not commented out
+-Fix extrapolation causing smooth jittering
+-Fix potato not correctly showing up for other players when thrown
+-Fix potato flickering bug if still a problem after potato fixed
+-Make sure game over text is positioned correctly on mobile and
+	non-mobile devices
 -Make sure game lasts 60 seconds
+-Maybe add infinite potato range
