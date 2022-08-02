@@ -7,7 +7,7 @@ still get stuff from the first room*/
 let lobby = 0;
 // when connected to the server, set id
 socket.on("connected", ()=> {
-    if(lobby < 1 && id != -1) {
+    if(lobby < 1 && id == -1) {
         id = socket.id;
         console.log(id);
     }
