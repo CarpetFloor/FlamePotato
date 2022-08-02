@@ -220,20 +220,6 @@ io.on('connection', (socket) => {
   socket.on("send client data", (client, lobby, potatoData, frame) => {
     ++dataSentCount[lobby];
 
-    let newPotatoData = {
-      player: -1,
-      x: 0,
-      y: 0,
-      lastx: 0,
-    };
-
-    if(potatoData != "nothing") {
-      newPotatoData.player = potatoData.player;
-      newPotatoData.x = potatoData.x;
-      newPotatoData.y = potatoData.y;
-      // newPotatoData.lastx = potatoData.lastx;
-    }
-
     for(let i = 0; i < lobbies[lobby].length; i++) {
        if(lobbies[lobby][i].id == client.id) {
         lobbies[lobby][i].x = client.x;
@@ -242,7 +228,6 @@ io.on('connection', (socket) => {
         lobbies[lobby][i].dirx = client.dirx;
         lobbies[lobby][i].diry = client.diry;
         lobbies[lobby][i].animationFrame = client.animationFrame;
-        // lobbies[lobby][i].dashPressed = client.dashPressed;
       }
     }
 
@@ -251,7 +236,7 @@ io.on('connection', (socket) => {
       ++lobbyFrames[lobby];
 
       io.to(lobby.toString()).emit("send server data", lobbies[lobby], 
-      (potatoData != "nothing") ? newPotatoData : "nothing", lobbyFrames[lobby]);
+      potatoData, lobbyFrames[lobby]);
     }
   })
 });

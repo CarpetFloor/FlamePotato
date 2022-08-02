@@ -7,7 +7,7 @@ still get stuff from the first room*/
 let lobby = 0;
 // when connected to the server, set id
 socket.on("connected", ()=> {
-    if(lobby < 1) {
+    if(lobby < 1 && id != -1) {
         id = socket.id;
         console.log(id);
     }
@@ -1272,10 +1272,36 @@ function mobileDash() {
     }
 }
 
+function setData() {
+    // only send client data that is actually needed
+    clientData = {
+        id: players[clientId].id,
+        x: players[clientId].x,
+        y: players[clientId].y,
+        lastx: players[clientId].lastx,
+        dirx: (mobile) ? joystickData.movex : players[clientId].dirx,
+        diry: (mobile) ? joystickData.movey : players[clientId].diry,
+        animationFrame: players[clientId].animationFrame,
+        // dashPressed: players[clientId].dashPressed,
+    }
+
+    // only send potato data that is actually needed
+    potatoData = {
+        player: potato.player,
+        x: potato.x,
+        y: potato.y,
+    }
+    
+    if(recentlyPassed)
+        recentlyPassed = false;
+}
+
 // i have no idea how to fix lag, pls work
 /* but the idea here is to guess what would be happening in the frames 
 that should be a thing but aren't because of lag. Make guess by moving
 client if they were pressing a button*/
+let clientData;
+let potatoData;
 function extrapolate() {
     renderStuff();
 
@@ -1286,8 +1312,6 @@ function extrapolate() {
 
     for(let i = 0; i < players.length; i++) {
         if(players[i].id != id) {
-            // console.log(players[i].x, players[i].y, players[i].dirx, players[i].diry);
-            
             // do extrapolation differently for mobile and non-mobile devices
             // mobile
             /* for mobile, continue going in the last inputed direction*/
@@ -1316,6 +1340,8 @@ function extrapolate() {
             }
         }
     }
+
+    setData();
 }
 
 function renderStuff() {
@@ -1347,32 +1373,11 @@ function loop() {
         players[clientId].processInput();
         potato.movement();
 
-        // only send client data that is actually needed by server
-        let clientData = {
-            id: players[clientId].id,
-            x: players[clientId].x,
-            y: players[clientId].y,
-            lastx: players[clientId].lastx,
-            dirx: (mobile) ? joystickData.movex : players[clientId].dirx,
-            diry: (mobile) ? joystickData.movey : players[clientId].diry,
-            animationFrame: players[clientId].animationFrame,
-            // dashPressed: players[clientId].dashPressed,
-        }
+        setData();
 
-        // only send potato data that is actually needed by server
-        let potatoData = {
-            player: potato.player,
-            x: potato.x,
-            y: potato.y,
-        }
-
+        console.log("client sent");
         socket.emit("send client data", clientData, lobby, 
-        (potato.player == clientId || recentlyPassed) ? 
-        potatoData : "nothing", 
-        potatoFrame);
-
-        if(recentlyPassed)
-            recentlyPassed = false;
+        potatoData, potatoFrame);
     }
 };
 
@@ -1451,7 +1456,8 @@ socket.on("cancel game", () => {
 
 // client is receiving data from the server
 socket.on("send server data", (playersData, potatoData, frame) => {
-    if(potatoData != "nothing") {
+    console.log("client received");
+    if(potato.player != clientId) {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
         potato.y = potatoData.y;
