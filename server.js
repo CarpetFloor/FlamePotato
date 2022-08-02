@@ -36,11 +36,19 @@ function User(id) {
   // this.hasSentData = false;
 }
 
+function Potato() {
+  this.player = -1,
+  this.x = -1,
+  this.y = -1,
+  this.attached = false
+}
+
 let users = [];
 let lobbies = [[]];
 let lobbiesInGame = [];// which lobbies are in the game
 let dataSentCount = [-1];
 let lobbyFrames = [-1];
+let potatoDatas = [-1];
 let maxPlayersPerLobby = 4;
 let startWait = 1500;
 let fps = 30;
@@ -85,6 +93,7 @@ io.on('connection', (socket) => {
         if(lobbiesInGame[i] == lobbyRemovePos) {
           lobbiesInGame.splice(i, 1);
           dataSentCount.splice(i, 1);
+          potatoDatas.splice(i, 1);
           lobbyFrames.splice(i, 1);
           break;
         }
@@ -178,6 +187,7 @@ io.on('connection', (socket) => {
           if(lobbiesInGame[i] == lobby) {
             lobbiesInGame.splice(i, 1);
             dataSentCount.splice(i, 1);
+            potatoDatas.splice(i, 1);
             lobbyFrames.splice(i, 1);
             break;
           }
@@ -207,6 +217,7 @@ io.on('connection', (socket) => {
     if(lobbies[lobby].length > 1 && !(lobbiesInGame.includes(lobby))) {
       lobbiesInGame.push(lobby);
       dataSentCount.push(0);
+      potatoDatas.push(new Potato());
       lobbyFrames.push(0);
       io.to(lobby.toString()).emit("game started", gameStartData(lobby));
     }
@@ -219,6 +230,13 @@ io.on('connection', (socket) => {
   // server is receiving data from a client
   socket.on("send client data", (client, lobby, potatoData, frame) => {
     ++dataSentCount[lobby];
+
+    if(potatoData != "nothing") {
+      potatoDatas[lobby].player = potatoData.player;
+      potatoDatas[lobby].x = potatoData.x;
+      potatoDatas[lobby].y = potatoData.y;
+      potatoDatas[lobby].attached = potatoData.attached;
+    }
 
     for(let i = 0; i < lobbies[lobby].length; i++) {
        if(lobbies[lobby][i].id == client.id) {
@@ -236,7 +254,7 @@ io.on('connection', (socket) => {
       ++lobbyFrames[lobby];
 
       io.to(lobby.toString()).emit("send server data", lobbies[lobby], 
-      potatoData, lobbyFrames[lobby]);
+      potatoDatas[lobby], lobbyFrames[lobby]);
     }
   })
 });

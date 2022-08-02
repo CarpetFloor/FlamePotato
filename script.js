@@ -1272,6 +1272,13 @@ function mobileDash() {
     }
 }
 
+function processStuff() {
+    players[clientId].processInput();
+    
+    if(potato.player == clientId)
+        potato.movement();
+}
+
 function setData() {
     // only send client data that is actually needed
     clientData = {
@@ -1282,15 +1289,18 @@ function setData() {
         dirx: (mobile) ? joystickData.movex : players[clientId].dirx,
         diry: (mobile) ? joystickData.movey : players[clientId].diry,
         animationFrame: players[clientId].animationFrame,
-        // dashPressed: players[clientId].dashPressed,
     }
 
     // only send potato data that is actually needed
-    potatoData = {
-        player: potato.player,
-        x: potato.x,
-        y: potato.y,
-    }
+    if(potato.player == clientId)
+        potatoData = {
+            player: potato.player,
+            x: potato.x,
+            y: potato.y,
+            attached: potato.attached
+        }
+    else
+        potatoData = "nothing"
     
     if(recentlyPassed)
         recentlyPassed = false;
@@ -1305,8 +1315,7 @@ let potatoData;
 function extrapolate() {
     renderStuff();
 
-    players[clientId].processInput();
-    potato.movement();
+    processStuff();
 
     let speed = players[0].speed;
 
@@ -1358,11 +1367,7 @@ function renderStuff() {
     // render client last so that they are on top of other clients
     players[clientId].show();
 
-    // i gave up on trying to layer the potato so put it all here
-    if(potato.player == clientId)
-        potato.show();
-    else
-        showOtherPotato();
+    potato.show();
 }
 
 // the main loop for the game
@@ -1370,12 +1375,10 @@ function loop() {
     if(mapLoaded && !over) {
         renderStuff();
 
-        players[clientId].processInput();
-        potato.movement();
+        processStuff();
 
         setData();
 
-        console.log("client sent");
         socket.emit("send client data", clientData, lobby, 
         potatoData, potatoFrame);
     }
@@ -1456,11 +1459,11 @@ socket.on("cancel game", () => {
 
 // client is receiving data from the server
 socket.on("send server data", (playersData, potatoData, frame) => {
-    console.log("client received");
     if(potato.player != clientId) {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
         potato.y = potatoData.y;
+        potato.attached = potatoData.attached;
     }
 
     for(let i = 0; i < playersData.length; i++) {
@@ -1514,18 +1517,4 @@ function showOtherPlayers() {
                 );
         }
     }
-}
-
-// when the potato is with player other than client
-function showOtherPotato() {
-    r.drawImage(potato.img, // img
-        //(players[potato.player].dir == 1) ? 0 : potato.size, // clip x start
-        0, // clip x start
-        0, // clip y start
-        potato.size, // clip x end
-        potato.size, // clip y end
-        potato.x - (potato.size / 2), // x
-        potato.y - potato.yOffset, // y
-        potato.size, // width 
-        potato.size); // height
 }

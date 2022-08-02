@@ -1,7 +1,5 @@
 -Fix extrapolation causing jittering
 -Fix potato not correctly transfering to another player
--Fix potato not correctly showing up for other players when thrown
--Fix potato flickering bug if still a problem after potato fixed
 -Make sure game over text is positioned correctly on mobile and
 	non-mobile devices
 -Make sure game lasts 60 seconds
