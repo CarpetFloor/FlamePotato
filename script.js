@@ -151,7 +151,8 @@ let playerNames = ["yellow", "green", "blue", "red"];
 let gameStarted = false;
 let clientData;
 let potatoData;
-let loopInterval;
+let extrapolateInterval;
+let extrapolateFinished = false;
 
 let map = {
     img: new Image(),
@@ -1218,7 +1219,7 @@ function startGame() {
         document.getElementById("joystickContainer").style.visibility = "visible";
     }
 
-    // loopInterval = window.setInterval(loop, timeUntilNextFrame);
+    extrapolateInterval = window.setInterval(extrapolate, timeUntilNextFrame);
     loop();
 }
 
@@ -1299,12 +1300,14 @@ function renderStuff() {
     potato.show();
 }
 
+/*
 function processStuff() {
     players[clientId].processInput();
     
     if(potato.player == clientId)
         potato.movement();
 }
+*/
 
 function setData() {
     // only send client data that is actually needed
@@ -1333,16 +1336,13 @@ function setData() {
         recentlyPassed = false;
 }
 
-// main game loop
-function loop() {
+function extrapolate() {
+    extrapolateFinished = false;
+
     renderStuff();
 
-    processStuff();
+    players[clientId].processInput();
 
-    let speed = players[0].speed;
-
-    /*
-    // extrapolate other clients
     for(let i = 0; i < players.length; i++) {
         if(i != clientId) {
             // mobile
@@ -1371,7 +1371,22 @@ function loop() {
                 }
             }
         }
-    }*/
+    }
+
+    extrapolateFinished = true;
+}
+
+// main game loop
+function loop() {
+    renderStuff();
+
+    if(!extrapolateFinished)
+        players[clientId].processInput();
+    
+    if(potato.player == clientId)
+        potato.movement();
+
+    let speed = players[0].speed;
 
     setData();
     players[clientId].hasSentData = true;
@@ -1379,7 +1394,7 @@ function loop() {
 }
 
 function removeListeners() {
-    window.clearInterval(loopInterval);
+    window.clearInterval(extrapolateInterval);
 
     if(!mobile) {
         document.removeEventListener("keydown", press);
