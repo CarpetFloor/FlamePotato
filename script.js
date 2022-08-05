@@ -1337,60 +1337,61 @@ function setData() {
 }
 
 function extrapolate() {
-    extrapolateFinished = false;
+    if(!over) {
+        extrapolateFinished = false;
 
-    renderStuff();
+        renderStuff();
 
-    players[clientId].processInput();
+        players[clientId].processInput();
 
-    for(let i = 0; i < players.length; i++) {
-        if(i != clientId) {
-            // mobile
-            // for mobile, continue going in the last inputed direction
-            if(players[i].dirx != 0 && players[i].dirx != 1 && players[i].dirx != -1) {
-                players[i].x += players[i].dirx;
-                players[i].y += players[i].diry;
-            }
-            // not mobile
-            else {
-                // lol forgot to normalize for way too long
-                // diagonal
-                if(players[i].dirx != 0 && players[i].diry != 0) {
-                    players[i].x += players[i].dirx * 
-                    (speed / (Math.sqrt(Math.pow(speed, 2) + 
-                    Math.pow(speed, 2)))) * speed;
-
-                    players[i].y += players[i].diry * 
-                    (speed / (Math.sqrt(Math.pow(speed, 2) + 
-                    Math.pow(speed, 2)))) * speed;
+        for(let i = 0; i < players.length; i++) {
+            if(i != clientId) {
+                // mobile
+                // for mobile, continue going in the last inputed direction
+                if(players[i].dirx != 0 && players[i].dirx != 1 && players[i].dirx != -1) {
+                    players[i].x += players[i].dirx;
+                    players[i].y += players[i].diry;
                 }
-                // not diagonal
+                // not mobile
                 else {
-                    players[i].x += players[i].dirx * speed;
-                    players[i].y += players[i].diry * speed;
+                    // lol forgot to normalize for way too long
+                    // diagonal
+                    if(players[i].dirx != 0 && players[i].diry != 0) {
+                        players[i].x += players[i].dirx * 
+                        (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                        Math.pow(speed, 2)))) * speed;
+
+                        players[i].y += players[i].diry * 
+                        (speed / (Math.sqrt(Math.pow(speed, 2) + 
+                        Math.pow(speed, 2)))) * speed;
+                    }
+                    // not diagonal
+                    else {
+                        players[i].x += players[i].dirx * speed;
+                        players[i].y += players[i].diry * speed;
+                    }
                 }
             }
         }
-    }
 
-    extrapolateFinished = true;
+        extrapolateFinished = true;
+    }
 }
 
 // main game loop
 function loop() {
-    renderStuff();
+    if(!over) {
+        renderStuff();
+        
+        if(potato.player == clientId)
+            potato.movement();
 
-    if(!extrapolateFinished)
-        players[clientId].processInput();
-    
-    if(potato.player == clientId)
-        potato.movement();
+        let speed = players[0].speed;
 
-    let speed = players[0].speed;
-
-    setData();
-    players[clientId].hasSentData = true;
-    socket.emit("send client data", clientData, lobby, potatoData, potatoFrame);
+        setData();
+        players[clientId].hasSentData = true;
+        socket.emit("send client data", clientData, lobby, potatoData, potatoFrame);
+    }
 }
 
 function removeListeners() {
