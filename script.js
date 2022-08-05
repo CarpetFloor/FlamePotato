@@ -1344,6 +1344,8 @@ function extrapolate() {
 
         players[clientId].processInput();
 
+        let speed = players[0].speed;
+
         for(let i = 0; i < players.length; i++) {
             if(i != clientId) {
                 // mobile
@@ -1385,8 +1387,6 @@ function loop() {
         
         if(potato.player == clientId)
             potato.movement();
-
-        let speed = players[0].speed;
 
         setData();
         players[clientId].hasSentData = true;
