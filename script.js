@@ -565,7 +565,7 @@ let potato = {
     throwx: 1,
     throwFrame: 0,
     maxThrowFrame: 7,
-    throwSpeed: 80,
+    throwSpeed: 100,
     mouseThrowx: 0,// the mouse x position when clicked to throw
     mouseThrowy: 0,// the mouse y position when clicked to throw
     throwMovex: 0,// how much to move each frame on x axis during throw
