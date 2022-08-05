@@ -149,7 +149,9 @@ let profanity = false;
 let playerColors = ["yellow", "lime", "cornflowerBlue", "red"];
 let playerNames = ["yellow", "green", "blue", "red"];
 let gameStarted = false;
-let extrapolateInterval;
+let clientData;
+let potatoData;
+let loopInterval;
 
 let map = {
     img: new Image(),
@@ -218,16 +220,17 @@ function Player(id) {
     this.dashDiry = 0,
     this.canMovex = true,
     this.canMoveY = true,
-    this.speed = 10,
+    this.speed = 17,
     this.dashPressed = false,
     this.canDash = true,
-    this.dashMultiplier = 5,
+    this.dashMultiplier = 4,
     this.dashFrame = 0,
-    this.maxDashFrame = 11,
+    this.maxDashFrame = 8,
     this.dashWaitFrame = 0,
     this.maxDashWaitFrame = fps * 5,
     // right, bottom-right, bottom, bottom-left, left, top-left, top, top-right
     this.lastDir = 0,
+    this.hasSentData = false,
     this.setUp = function() {
         this.img.src = "Assets/Players.png";
         this.dashWaitFrame = this.maxDashWaitFrame;
@@ -555,14 +558,13 @@ let potato = {
     size: 60,
     yOffset: 30,
     player: -1,
-    attached: true,// if on a player, only not on a player when
-    //player throws potato
+    attached: false,
     threw: false,
     canBeThrown: true,
     throwx: 1,
     throwFrame: 0,
-    maxThrowFrame: 10,
-    throwSpeed: 70,
+    maxThrowFrame: 7,
+    throwSpeed: 80,
     mouseThrowx: 0,// the mouse x position when clicked to throw
     mouseThrowy: 0,// the mouse y position when clicked to throw
     throwMovex: 0,// how much to move each frame on x axis during throw
@@ -966,6 +968,12 @@ socket.on("game started", (init) => {
     dashEffectR3.strokeStyle = "white";
     dashEffectR3.lineWidth = 80;
 
+    // reset potato data for each client
+    potato.attached = false;
+    potato.threw = false;
+    potato.canBeThrown = true;
+    potato.throwFrame = 0;
+
     players.length = 0;
     // add players to players array
     for(let i = 0; i < init.players.ids.length; i++) {
@@ -982,6 +990,9 @@ socket.on("game started", (init) => {
         // set which player has the potato
         if(players[i].id == init.potatoPlyayerId)
             potato.player = i;
+        
+        if(i == clientId)
+            potato.attached = true;
         
         players[i].setUp();
     }
@@ -1207,9 +1218,7 @@ function startGame() {
         document.getElementById("joystickContainer").style.visibility = "visible";
     }
 
-    extrapolateInterval = window.setInterval(extrapolate, timeUntilNextFrame);
-
-    loop();
+    loopInterval = window.setInterval(loop, timeUntilNextFrame);
 }
 
 let joystickConfig = {
@@ -1272,6 +1281,23 @@ function mobileDash() {
     }
 }
 
+function renderStuff() {
+    r.clearRect(0, 0, w, h);
+
+    // bar at the top that shows how much longer the game will last for,
+    // on second thought, this might not be the best name
+    ui.showPotato();
+    ui.showDash();
+    
+    // render other clients first so client is on top :)
+    showOtherPlayers();
+
+    // render client last so that they are on top of other clients
+    players[clientId].show();
+
+    potato.show();
+}
+
 function processStuff() {
     players[clientId].processInput();
     
@@ -1292,7 +1318,7 @@ function setData() {
     }
 
     // only send potato data that is actually needed
-    if(potato.player == clientId)
+    if(potato.player == clientId || recentlyPassed)
         potatoData = {
             player: potato.player,
             x: potato.x,
@@ -1306,13 +1332,8 @@ function setData() {
         recentlyPassed = false;
 }
 
-// i have no idea how to fix lag, pls work
-/* but the idea here is to guess what would be happening in the frames 
-that should be a thing but aren't because of lag. Make guess by moving
-client if they were pressing a button*/
-let clientData;
-let potatoData;
-function extrapolate() {
+// main game loop
+function loop() {
     renderStuff();
 
     processStuff();
@@ -1320,7 +1341,7 @@ function extrapolate() {
     let speed = players[0].speed;
 
     for(let i = 0; i < players.length; i++) {
-        if(players[i].id != id) {
+        if(i != clientId) {
             // do extrapolation differently for mobile and non-mobile devices
             // mobile
             /* for mobile, continue going in the last inputed direction*/
@@ -1351,41 +1372,12 @@ function extrapolate() {
     }
 
     setData();
+    players[clientId].hasSentData = true;
+    socket.emit("send client data", clientData, lobby, potatoData, potatoFrame);
 }
-
-function renderStuff() {
-    r.clearRect(0, 0, w, h);
-
-    // bar at the top that shows how much longer the game will last for,
-    // on second thought, this might not be the best name
-    ui.showPotato();
-    ui.showDash();
-    
-    // render other clients first so client is on top :)
-    showOtherPlayers();
-
-    // render client last so that they are on top of other clients
-    players[clientId].show();
-
-    potato.show();
-}
-
-// the main loop for the game
-function loop() {
-    if(mapLoaded && !over) {
-        renderStuff();
-
-        processStuff();
-
-        setData();
-
-        socket.emit("send client data", clientData, lobby, 
-        potatoData, potatoFrame);
-    }
-};
 
 function removeListeners() {
-    window.clearInterval(extrapolateInterval);
+    window.clearInterval(loopInterval);
 
     if(!mobile) {
         document.removeEventListener("keydown", press);
@@ -1459,7 +1451,7 @@ socket.on("cancel game", () => {
 
 // client is receiving data from the server
 socket.on("send server data", (playersData, potatoData, frame) => {
-    if(potato.player != clientId) {
+    if(potatoData != "nothing") {
         potato.player = potatoData.player;
         potato.x = potatoData.x;
         potato.y = potatoData.y;
@@ -1479,12 +1471,16 @@ socket.on("send server data", (playersData, potatoData, frame) => {
         }
     }
 
-    potatoFrame = frame;
-    
-    if(potatoFrame >= maxPotatoFrame)
-        gameOver();
-    else
-        window.setTimeout(loop, timeUntilNextFrame);
+    if(players[clientId].hasSentData) {
+        players[clientId].hasSentData = false;
+
+        ++potatoFrame;
+        if(potatoFrame < frame)
+            potatoFrame = frame;
+        
+        if(potatoFrame >= maxPotatoFrame)
+            gameOver();
+    }
 });
 
 function showOtherPlayers() {
