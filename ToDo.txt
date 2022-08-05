@@ -5,3 +5,5 @@
 -Make sure game lasts 60 seconds
 -Maybe add infinite potato range
 -Reopen tab error(s)
+
+does this work?
