@@ -1336,13 +1336,13 @@ function setData() {
 function loop() {
     renderStuff();
 
-    processStuff();
+    // processStuff();
 
     let speed = players[0].speed;
 
+    // extrapolate other clients
     for(let i = 0; i < players.length; i++) {
         if(i != clientId) {
-            // do extrapolation differently for mobile and non-mobile devices
             // mobile
             /* for mobile, continue going in the last inputed direction*/
             if(players[i].dirx != 0 && players[i].dirx != 1 && players[i].dirx != -1) {
@@ -1475,12 +1475,13 @@ socket.on("send server data", (playersData, potatoData, frame) => {
         players[clientId].hasSentData = false;
 
         ++potatoFrame;
-        if(potatoFrame < frame)
-            potatoFrame = frame;
         
         if(potatoFrame >= maxPotatoFrame)
             gameOver();
     }
+
+    if(potatoFrame < frame)
+            potatoFrame = frame;
 });
 
 function showOtherPlayers() {
