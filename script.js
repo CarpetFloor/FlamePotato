@@ -1336,7 +1336,7 @@ function setData() {
 function loop() {
     renderStuff();
 
-    // processStuff();
+    processStuff();
 
     let speed = players[0].speed;
 
