@@ -895,7 +895,7 @@ function inCollision(fromX, fromY, toX, toY) {
         Math.pow(Math.abs(toX - fromX), 2)
         +
         Math.pow(Math.abs(toY - fromY), 2)
-    ) < 70);
+    ) < 210);
 }
 
 // NOTE: use size if width and height are the same, otherwise use width and height
