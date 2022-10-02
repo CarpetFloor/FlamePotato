@@ -946,7 +946,6 @@ socket.on("game started", (init) => {
     over = false;
     fps = init.fps;
     timeUntilNextFrame = 1000 / fps;
-    maxPotatoFrame = fps * 60;
     potatoFrame = 0;
     startWait = init.startWait;
 
@@ -997,6 +996,8 @@ socket.on("game started", (init) => {
         
         players[i].setUp();
     }
+    
+    maxPotatoFrame = players.length * fps * 15;
 
     map.loadImage();
     window.setTimeout(map.show, startWait);// for some reason, map.show is not able
